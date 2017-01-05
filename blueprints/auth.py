@@ -86,12 +86,17 @@ def del_user():
     session.pop('name', None)
     session.pop('avatar', None)
 
-def get_callback(route):
+def get_callback(route, enable_success_url=True, enable_failure_url=True):
+    params = {
+        "_external": True,
+    }
+    if enable_success_url:
+        params['success_url'] = request.args.get('success_url') or request.referrer or url_for(INDEX)
+    if enable_failure_url:
+        params['failure_url'] = request.args.get('failure_url') or request.referrer or url_for(INDEX)
     return url_for(
         route,
-        success_url=request.args.get('success_url') or request.referrer or url_for(INDEX),
-        failure_url=request.args.get('failure_url') or request.referrer or url_for(INDEX),
-        _external=True
+        **params
     )
 
 def configured(remote_app):
@@ -202,7 +207,7 @@ def instagram_authorized():
 def weibo_login():
     if not configured(weibo):
         return redirect(request.args.get('failure_url'))
-    return weibo.authorize(callback=get_callback('auth.weibo_authorized'))
+    return weibo.authorize(callback=get_callback('auth.weibo_authorized', enable_success_url=False, enable_failure_url=False))
 
 @auth.route('/weibo/callback')
 def weibo_authorized():
